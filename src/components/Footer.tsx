@@ -82,7 +82,7 @@ export default function Footer() {
                 asChild
               >
                 <a
-                  href="https://github.com/rvph10/"
+                  href="https://github.com/rvph10/wheelit"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Visit rvph's GitHub profile"

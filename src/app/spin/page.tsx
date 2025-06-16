@@ -17,6 +17,8 @@ import {
   Sparkles,
   X,
   Medal,
+  Shuffle,
+  Grid3X3,
 } from "lucide-react";
 
 type WheelMode = "simple" | "teams" | "weighted" | "multiple";
@@ -374,7 +376,7 @@ const WorkingWheel = ({
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Draw text
+      // Draw text - responsive font sizing
       const textAngle = startAngle + (endAngle - startAngle) / 2;
       const textX = centerX + Math.cos(textAngle) * (radius * 0.7);
       const textY = centerY + Math.sin(textAngle) * (radius * 0.7);
@@ -383,20 +385,27 @@ const WorkingWheel = ({
       ctx.translate(textX, textY);
       ctx.rotate(textAngle + Math.PI / 2);
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 14px Arial";
+
+      // Responsive font sizing based on canvas size
+      const fontSize = Math.max(10, Math.min(14, radius / 20));
+      ctx.font = `bold ${fontSize}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      // Truncate long text
+      // Truncate long text based on canvas size
+      const maxLength = radius > 150 ? 12 : 8;
       const displayText =
-        item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name;
+        item.name.length > maxLength
+          ? item.name.substring(0, maxLength) + "..."
+          : item.name;
       ctx.fillText(displayText, 0, 0);
 
       // Draw percentage indicator for weighted mode
       if (mode === "weighted" && item.weight) {
         ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.font = "bold 12px Arial";
-        ctx.fillText(`${item.weight}%`, 0, 20);
+        const percentageFontSize = Math.max(8, Math.min(12, radius / 25));
+        ctx.font = `bold ${percentageFontSize}px Arial`;
+        ctx.fillText(`${item.weight}%`, 0, fontSize + 5);
       }
 
       ctx.restore();
@@ -481,83 +490,264 @@ const WorkingWheel = ({
   };
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="relative">
-          {/* Wheel Container */}
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardContent className="p-4 sm:p-6">
+        <div className="space-y-4 sm:space-y-6">
+          {/* Wheel Container - Responsive sizing */}
           <div className="relative flex items-center justify-center">
-            <div
-              ref={wheelRef}
-              className="relative"
-              style={{ transformOrigin: "50% 50%" }}
-            >
-              <canvas
-                ref={canvasRef}
-                width={400}
-                height={400}
-                className="max-w-full h-auto"
-              />
-            </div>
+            <div className="relative w-full max-w-sm sm:max-w-md lg:max-w-lg aspect-square">
+              <div
+                ref={wheelRef}
+                className="relative w-full h-full"
+                style={{ transformOrigin: "50% 50%" }}
+              >
+                <canvas
+                  ref={canvasRef}
+                  width={400}
+                  height={400}
+                  className="w-full h-full max-w-full"
+                />
+              </div>
 
-            {/* Pointer - positioned at top */}
-            <div className="absolute -rotate-180 top-0 left-1/2 transform -translate-x-1/2  z-10">
-              <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-b-[25px] border-l-transparent border-r-transparent border-b-red-600 drop-shadow-lg"></div>
+              {/* Pointer - responsive sizing */}
+              <div className="absolute -rotate-180 top-0 left-1/2 transform -translate-x-1/2 z-10">
+                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[20px] sm:border-l-[15px] sm:border-r-[15px] sm:border-b-[25px] border-l-transparent border-r-transparent border-b-red-600 drop-shadow-lg"></div>
+              </div>
             </div>
           </div>
 
-          {/* Spin Button */}
-          <div className="text-center mt-6">
+          {/* Spin Button - Responsive sizing */}
+          <div className="text-center">
             <Button
               size="lg"
               onClick={performSpin}
               disabled={isSpinning || items.length === 0}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-6"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-base sm:text-lg px-6 py-4 sm:px-8 sm:py-6 w-full sm:w-auto"
             >
               {isSpinning ? (
                 <>
                   <RotateCcw className="mr-2 h-5 w-5 animate-spin" />
-                  Spinning...
+                  <span>Spinning...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="mr-2 h-5 w-5" />
-                  Spin the Wheel
+                  <span>Spin the Wheel</span>
                 </>
               )}
             </Button>
           </div>
 
-          {/* Items List */}
-          <div className="mt-6">
-            <h3 className="font-semibold mb-3 text-gray-800 dark:text-gray-200">
+          {/* Items List - Responsive design */}
+          <div className="max-h-48 sm:max-h-60 overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 text-gray-900 dark:text-white text-center">
               Items ({items.length})
             </h3>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+            <div className="space-y-2">
               {items.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg gap-2"
+                >
+                  <span className="font-medium text-gray-900 dark:text-white text-sm sm:text-base break-words min-w-0 flex-1">
+                    {item.name}
+                  </span>
+                  {mode === "weighted" && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs flex-shrink-0"
+                      style={{
+                        backgroundColor: colors[index % colors.length] + "20",
+                        color: colors[index % colors.length],
+                      }}
+                    >
+                      {item.weight}%
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// New Multiple Selection Animation Component
+const MultipleSelectAnimation = ({
+  items,
+  selectCount,
+  onResult,
+}: {
+  items: WheelItem[];
+  selectCount: number;
+  onResult: (result: SpinResult) => void;
+}) => {
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [shuffledItems, setShuffledItems] = useState<WheelItem[]>(items);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+
+  // Generate colors for cards
+  const colors = useMemo(
+    () => [
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#96CEB4",
+      "#FFEAA7",
+      "#DDA0DD",
+      "#98D8C8",
+      "#F7DC6F",
+      "#BB8FCE",
+      "#85C1E9",
+      "#F8C471",
+      "#82E0AA",
+      "#F1948A",
+      "#85929E",
+      "#D2B4DE",
+    ],
+    []
+  );
+
+  useEffect(() => {
+    setShuffledItems(items);
+  }, [items]);
+
+  const performSelection = async () => {
+    if (isSelecting || items.length === 0) return;
+
+    setIsSelecting(true);
+
+    // Step 1: Shuffle animation
+    const shuffleRounds = 8;
+    for (let round = 0; round < shuffleRounds; round++) {
+      const newShuffled = [...items].sort(() => Math.random() - 0.5);
+      setShuffledItems(newShuffled);
+
+      // Animate cards during shuffle
+      if (cardsRef.current) {
+        gsap.to(cardsRef.current.children, {
+          rotateY: 360,
+          duration: 0.3,
+          stagger: 0.02,
+          ease: "power2.inOut",
+        });
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+
+    // Step 2: Final shuffle to determine winners
+    const finalShuffled = [...items].sort(() => Math.random() - 0.5);
+    const winners = finalShuffled.slice(0, selectCount);
+    setShuffledItems(finalShuffled);
+
+    // Step 3: Brief pause for effect
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Step 4: Complete the selection and show results
+    setIsSelecting(false);
+    onResult({
+      type: "multiple",
+      selectedItems: winners,
+      timestamp: Date.now(),
+    });
+  };
+
+  return (
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardContent className="p-4 sm:p-6">
+        <div className="space-y-4 sm:space-y-6">
+          {/* Cards Grid - Responsive */}
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-900 dark:text-white text-center">
+              Available Items
+            </h3>
+            <div
+              ref={cardsRef}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 min-h-[150px] sm:min-h-[200px]"
+            >
+              {shuffledItems.map((item, index) => (
+                <div
+                  key={`${item.id}-${index}`}
+                  className="relative aspect-[3/4] rounded-lg shadow-md transform-gpu transition-all duration-300 hover:scale-105"
+                  style={{
+                    backgroundColor: colors[index % colors.length],
+                    perspective: "1000px",
+                  }}
+                >
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white/20 to-transparent p-2 flex flex-col justify-center items-center text-white text-center">
+                    <div className="text-xs font-bold break-words leading-tight">
+                      {item.name.length > 8
+                        ? item.name.substring(0, 8) + "..."
+                        : item.name}
+                    </div>
+                  </div>
+
+                  {/* Card back pattern for shuffle effect */}
+                  <div className="absolute inset-0 rounded-lg bg-gray-800 opacity-0 flex items-center justify-center text-white text-2xl">
+                    🎴
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Selection Button - Responsive */}
+          <div className="text-center">
+            <Button
+              size="lg"
+              onClick={performSelection}
+              disabled={isSelecting || items.length === 0}
+              className="bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-base sm:text-lg px-6 py-4 sm:px-8 sm:py-6 w-full sm:w-auto"
+            >
+              {isSelecting ? (
+                <>
+                  <Shuffle className="mr-2 h-5 w-5 animate-pulse" />
+                  <span>Selecting {selectCount} items...</span>
+                </>
+              ) : (
+                <>
+                  <Grid3X3 className="mr-2 h-5 w-5" />
+                  <span>
+                    Select {selectCount} Random Item{selectCount > 1 ? "s" : ""}
+                  </span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Items List Summary - Responsive */}
+          <div className="space-y-2 sm:space-y-3">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 text-center">
+              Total Items: {items.length} | Selecting: {selectCount}
+            </h3>
+            <div className="flex flex-wrap gap-1 sm:gap-2 justify-center">
+              {items.slice(0, 8).map((item, index) => (
                 <Badge
                   key={item.id}
                   variant="outline"
-                  className="text-sm"
+                  className="text-xs"
                   style={{
+                    backgroundColor: colors[index % colors.length] + "20",
                     borderColor: colors[index % colors.length],
                     color: colors[index % colors.length],
                   }}
                 >
-                  {item.name}
-                  {mode === "weighted" && item.weight && (
-                    <span className="ml-1 opacity-70">({item.weight}%)</span>
-                  )}
+                  {item.name.length > 8
+                    ? item.name.substring(0, 8) + "..."
+                    : item.name}
                 </Badge>
               ))}
+              {items.length > 8 && (
+                <Badge variant="outline" className="text-xs">
+                  +{items.length - 8} more
+                </Badge>
+              )}
             </div>
-            {items.length === 0 && (
-              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                <p className="text-sm">No items remaining!</p>
-                <p className="text-xs mt-1">
-                  Use the reset button to restore all items.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </CardContent>
@@ -812,23 +1002,30 @@ export default function SpinPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div ref={containerRef} className="container mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/setup")}
-            className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-white dark:hover:bg-gray-800 transition-all duration-300"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            <span className="text-sm font-medium">Back to Setup</span>
-          </Button>
+      <div
+        ref={containerRef}
+        className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-7xl"
+      >
+        {/* Header - Mobile First Design */}
+        <div className="mb-6 sm:mb-8">
+          {/* Back button - always visible on mobile */}
+          <div className="mb-4 sm:mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/setup")}
+              className="group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:bg-white dark:hover:bg-gray-800 transition-all duration-300"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+              <span className="text-sm font-medium">Back to Setup</span>
+            </Button>
+          </div>
 
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {/* Title and mode info - Responsive layout */}
+          <div className="text-center mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
               Spin the Wheel
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 px-4 mb-3">
               {config.mode === "simple" &&
                 (config.removeAfterSpin
                   ? "Pick one random item (removes after selection)"
@@ -840,70 +1037,85 @@ export default function SpinPage() {
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <Badge variant="secondary" className="text-sm">
+          {/* Badges - Mobile responsive */}
+          <div className="flex flex-wrap justify-center gap-2">
+            <Badge variant="secondary" className="text-xs sm:text-sm">
               {config.mode} mode
             </Badge>
             {config.mode === "simple" && config.removeAfterSpin && (
-              <Badge variant="outline" className="text-sm">
+              <Badge variant="outline" className="text-xs sm:text-sm">
                 {currentItems.length} remaining
               </Badge>
             )}
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Working Wheel Section */}
-          <div className="space-y-4">
-            <WorkingWheel
-              items={currentItems}
-              mode={config.mode}
-              onResult={handleWheelResult}
-            />
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+          {/* Working Wheel Section - Responsive sizing */}
+          <div className="space-y-4 flex flex-col items-center">
+            {config.mode === "multiple" ? (
+              <MultipleSelectAnimation
+                items={currentItems}
+                selectCount={config.selectCount || 1}
+                onResult={handleWheelResult}
+              />
+            ) : (
+              <WorkingWheel
+                items={currentItems}
+                mode={config.mode}
+                onResult={handleWheelResult}
+              />
+            )}
 
             {/* Reset button for simple mode with removeAfterSpin enabled */}
             {config.mode === "simple" &&
               config.removeAfterSpin &&
               currentItems.length !== originalItems.length && (
-                <div className="text-center">
+                <div className="text-center w-full">
                   <Button
                     variant="outline"
                     onClick={resetItems}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 w-full sm:w-auto"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    Reset All Items (
-                    {originalItems.length - currentItems.length} removed)
+                    <span className="text-sm">
+                      Reset All Items (
+                      {originalItems.length - currentItems.length} removed)
+                    </span>
                   </Button>
                 </div>
               )}
           </div>
 
-          {/* Results Section (same as original) */}
-          <div className="space-y-6">
+          {/* Results Section - Improved mobile layout */}
+          <div className="space-y-4 sm:space-y-6">
             {result && (
               <Card ref={resultRef}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-yellow-500" />
-                    Result
+                <CardHeader className="pb-3 sm:pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <Trophy className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                    <span>Result</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   {result.type === "teams" && result.teams ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {result.teams.map((team, index) => (
                         <div
                           key={index}
-                          className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                          className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
                         >
-                          <h4 className="font-semibold mb-2 flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            Team {index + 1}
+                          <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base">
+                            <Users className="h-4 w-4 flex-shrink-0" />
+                            <span>Team {index + 1}</span>
                           </h4>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1 sm:gap-2">
                             {team.map((member) => (
-                              <Badge key={member.id} variant="secondary">
+                              <Badge
+                                key={member.id}
+                                variant="secondary"
+                                className="text-xs"
+                              >
                                 {member.name}
                               </Badge>
                             ))}
@@ -916,13 +1128,13 @@ export default function SpinPage() {
                       {result.selectedItems?.map((item) => (
                         <div
                           key={item.id}
-                          className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg"
+                          className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg"
                         >
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white break-words">
                             {item.name}
                           </h4>
                           {config.mode === "weighted" && item.weight && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
                               Probability: {item.weight}%
                             </p>
                           )}
@@ -931,12 +1143,22 @@ export default function SpinPage() {
                     </div>
                   )}
 
-                  <div className="flex gap-2 mt-4">
-                    <Button variant="outline" size="sm" onClick={shareResults}>
+                  <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={shareResults}
+                      className="w-full sm:w-auto"
+                    >
                       <Share className="h-4 w-4 mr-2" />
                       Share
                     </Button>
-                    <Button variant="outline" size="sm" onClick={exportResults}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={exportResults}
+                      className="w-full sm:w-auto"
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Export
                     </Button>
@@ -945,20 +1167,22 @@ export default function SpinPage() {
               </Card>
             )}
 
-            {/* History (same as original) */}
+            {/* History - Improved mobile layout */}
             {spinHistory.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Recent Results</CardTitle>
+                <CardHeader className="pb-3 sm:pb-4">
+                  <CardTitle className="text-lg sm:text-xl">
+                    Recent Results
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                <CardContent className="pt-0">
+                  <div className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-64 overflow-y-auto">
                     {spinHistory.map((historyResult) => (
                       <div
                         key={historyResult.timestamp}
-                        className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm"
+                        className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm"
                       >
-                        <div className="font-medium">
+                        <div className="font-medium break-words">
                           {historyResult.type === "teams" && historyResult.teams
                             ? `Teams: ${historyResult.teams.length} groups`
                             : historyResult.selectedItems
