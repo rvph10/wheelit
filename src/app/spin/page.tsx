@@ -233,7 +233,7 @@ const ResultPopup = ({
             {/* Weight indicator for weighted mode */}
             {selectedItem.weight && (
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-                Weight: {selectedItem.weight}
+                Probability: {selectedItem.weight}%
               </p>
             )}
 
@@ -303,8 +303,38 @@ const WorkingWheel = ({
     []
   );
 
-  // Calculate segment angle
-  const segmentAngle = 360 / items.length;
+  // Calculate segment angles based on percentages for weighted mode
+  const getSegmentAngles = useCallback(() => {
+    if (mode === "weighted") {
+      const totalPercentage = items.reduce(
+        (sum, item) => sum + (item.weight || 0),
+        0
+      );
+
+      let currentAngle = 0;
+      return items.map((item) => {
+        const percentage = (item.weight || 0) / Math.max(totalPercentage, 1); // Normalize to 0-1
+        const angle = percentage * 360;
+        const result = {
+          start: currentAngle,
+          angle,
+          end: currentAngle + angle,
+        };
+        currentAngle += angle;
+        return result;
+      });
+    } else {
+      // Equal segments for non-weighted modes
+      const segmentAngle = 360 / items.length;
+      return items.map((_, index) => ({
+        start: index * segmentAngle,
+        angle: segmentAngle,
+        end: (index + 1) * segmentAngle,
+      }));
+    }
+  }, [items, mode]);
+
+  const segmentAngles = getSegmentAngles();
 
   // Enhanced wheel drawing function using Canvas for precise control
   const drawWheel = useCallback(() => {
@@ -319,12 +349,15 @@ const WorkingWheel = ({
     const radius = Math.min(centerX, centerY) - 10;
 
     // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.width);
 
-    // Draw segments
+    // Draw segments using calculated angles
     items.forEach((item, index) => {
-      const startAngle = (index * segmentAngle - 90) * (Math.PI / 180); // -90 to start from top
-      const endAngle = ((index + 1) * segmentAngle - 90) * (Math.PI / 180);
+      const segment = segmentAngles[index];
+      if (!segment) return;
+
+      const startAngle = (segment.start - 90) * (Math.PI / 180); // -90 to start from top
+      const endAngle = (segment.end - 90) * (Math.PI / 180);
 
       // Draw segment
       ctx.beginPath();
@@ -358,14 +391,15 @@ const WorkingWheel = ({
       const displayText =
         item.name.length > 12 ? item.name.substring(0, 12) + "..." : item.name;
       ctx.fillText(displayText, 0, 0);
-      ctx.restore();
 
-      // Draw weight indicator for weighted mode
+      // Draw percentage indicator for weighted mode
       if (mode === "weighted" && item.weight) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-        ctx.font = "bold 10px Arial";
-        ctx.fillText(`×${item.weight}`, textX, textY + 20);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.font = "bold 12px Arial";
+        ctx.fillText(`${item.weight}%`, 0, 20);
       }
+
+      ctx.restore();
     });
 
     // Draw center circle
@@ -383,13 +417,13 @@ const WorkingWheel = ({
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("🎯", centerX, centerY);
-  }, [items, mode, segmentAngle, colors]);
+  }, [items, mode, segmentAngles, colors]);
 
   useEffect(() => {
     drawWheel();
   }, [drawWheel]);
 
-  // FIXED: Accurate algorithm to determine winning segment
+  // FIXED: Accurate algorithm to determine winning segment with percentage support
   const determineWinningSegment = (finalRotation: number): WheelItem => {
     // Normalize rotation to 0-360 degrees
     const normalizedRotation = ((finalRotation % 360) + 360) % 360;
@@ -398,44 +432,16 @@ const WorkingWheel = ({
     // We need to account for the wheel rotating clockwise
     const pointerAngle = (360 - normalizedRotation) % 360;
 
-    // Determine which segment the pointer is in
-    const segmentIndex = Math.floor(pointerAngle / segmentAngle) % items.length;
-
-    return items[segmentIndex];
-  };
-
-  // Enhanced weighted selection for weighted mode
-  const getWeightedWinner = (): WheelItem => {
-    const totalWeight = items.reduce(
-      (sum, item) => sum + (item.weight || 1),
-      0
-    );
-    let random = Math.random() * totalWeight;
-
-    for (const item of items) {
-      random -= item.weight || 1;
-      if (random <= 0) {
-        return item;
+    // Find which segment the pointer is in
+    for (let i = 0; i < segmentAngles.length; i++) {
+      const segment = segmentAngles[i];
+      if (pointerAngle >= segment.start && pointerAngle < segment.end) {
+        return items[i];
       }
     }
 
+    // Fallback to last item
     return items[items.length - 1];
-  };
-
-  // Calculate the rotation needed to land on a specific segment
-  const getRotationForSegment = (targetSegment: WheelItem): number => {
-    const segmentIndex = items.findIndex(
-      (item) => item.id === targetSegment.id
-    );
-    const targetAngle = segmentIndex * segmentAngle + segmentAngle / 2;
-
-    // Calculate rotation to make the pointer land on this segment
-    const currentRotation = wheelRotation % 360;
-    const rotationNeeded = (360 - targetAngle + currentRotation) % 360;
-
-    // Add multiple full rotations for spinning effect
-    const baseRotations = 5 + Math.random() * 5; // 5-10 full rotations
-    return wheelRotation + baseRotations * 360 + rotationNeeded;
   };
 
   // Main spin function
@@ -444,20 +450,13 @@ const WorkingWheel = ({
 
     setIsSpinning(true);
 
-    let winner: WheelItem;
-    let finalRotation: number;
+    // For both simple and weighted modes, spin randomly and determine winner based on final position
+    const baseRotations = 5 + Math.random() * 5; // 5-10 full rotations
+    const randomAngle = Math.random() * 360;
+    const finalRotation = wheelRotation + baseRotations * 360 + randomAngle;
 
-    if (mode === "weighted") {
-      // For weighted mode, determine winner first, then calculate rotation to land on it
-      winner = getWeightedWinner();
-      finalRotation = getRotationForSegment(winner);
-    } else {
-      // For simple mode, random rotation and then determine winner
-      const baseRotations = 5 + Math.random() * 5; // 5-10 full rotations
-      const randomAngle = Math.random() * 360;
-      finalRotation = wheelRotation + baseRotations * 360 + randomAngle;
-      winner = determineWinningSegment(finalRotation);
-    }
+    // Pre-calculate the winner based on the final rotation
+    const winner = determineWinningSegment(finalRotation);
 
     // Animate the wheel spin
     gsap.to(wheelRef.current, {
@@ -546,7 +545,7 @@ const WorkingWheel = ({
                 >
                   {item.name}
                   {mode === "weighted" && item.weight && (
-                    <span className="ml-1 opacity-70">({item.weight})</span>
+                    <span className="ml-1 opacity-70">({item.weight}%)</span>
                   )}
                 </Badge>
               ))}
@@ -924,7 +923,7 @@ export default function SpinPage() {
                           </h4>
                           {config.mode === "weighted" && item.weight && (
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Weight: {item.weight}
+                              Probability: {item.weight}%
                             </p>
                           )}
                         </div>

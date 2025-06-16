@@ -130,7 +130,7 @@ export default function SetupPage() {
     {
       id: "weighted" as WheelMode,
       title: "Weighted Mode",
-      description: "Set custom probabilities for each item",
+      description: "Set custom percentages for each item (e.g., A=40%, B=30%)",
       icon: Scale,
       color: "bg-purple-500",
     },
@@ -149,7 +149,7 @@ export default function SetupPage() {
     const newItem: WheelItem = {
       id: Date.now().toString(),
       name: newItemName.trim(),
-      weight: config.mode === "weighted" ? 1 : undefined,
+      weight: config.mode === "weighted" ? 10 : undefined, // Default to 10% for new items
     };
 
     setConfig((prev) => ({
@@ -176,11 +176,30 @@ export default function SetupPage() {
   };
 
   const updateItemWeight = (id: string, weight: number) => {
+    // Ensure percentage is between 0 and 100
+    const clampedWeight = Math.max(0, Math.min(100, weight));
+
     setConfig((prev) => ({
       ...prev,
       items: prev.items.map((item) =>
-        item.id === id ? { ...item, weight } : item
+        item.id === id ? { ...item, weight: clampedWeight } : item
       ),
+    }));
+  };
+
+  // Auto-distribute percentages equally among all items
+  const distributePercentagesEqually = () => {
+    if (config.items.length === 0) return;
+
+    const equalPercentage = Math.round((100 / config.items.length) * 10) / 10; // Round to 1 decimal
+    const remainder = 100 - equalPercentage * config.items.length;
+
+    setConfig((prev) => ({
+      ...prev,
+      items: prev.items.map((item, index) => ({
+        ...item,
+        weight: index === 0 ? equalPercentage + remainder : equalPercentage, // Give remainder to first item
+      })),
     }));
   };
 
@@ -200,6 +219,17 @@ export default function SetupPage() {
       config.items.length < (config.teamCount || 2)
     )
       return false;
+
+    // For weighted mode, check if percentages add up to approximately 100%
+    if (config.mode === "weighted") {
+      const totalPercentage = config.items.reduce(
+        (sum, item) => sum + (item.weight || 0),
+        0
+      );
+      // Allow some tolerance (95% to 105%)
+      return totalPercentage >= 95 && totalPercentage <= 105;
+    }
+
     return true;
   };
 
@@ -213,6 +243,15 @@ export default function SetupPage() {
       addItem();
     }
   };
+
+  // Calculate total percentage for weighted mode validation
+  const getTotalPercentage = () => {
+    if (config.mode !== "weighted") return 0;
+    return config.items.reduce((sum, item) => sum + (item.weight || 0), 0);
+  };
+
+  const totalPercentage = getTotalPercentage();
+  const isPercentageValid = totalPercentage >= 95 && totalPercentage <= 105;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -356,6 +395,88 @@ export default function SetupPage() {
           </div>
         )}
 
+        {config.mode === "weighted" && config.items.length > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Percentage Distribution
+              </h3>
+              <Badge
+                variant={isPercentageValid ? "default" : "destructive"}
+                className="text-xs"
+              >
+                Total: {totalPercentage.toFixed(1)}%
+              </Badge>
+            </div>
+
+            {/* Visual percentage bar */}
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2 overflow-hidden">
+              {config.items.map((item, index) => {
+                const percentage = item.weight || 0;
+                const colors = [
+                  "#FF6B6B",
+                  "#4ECDC4",
+                  "#45B7D1",
+                  "#96CEB4",
+                  "#FFEAA7",
+                  "#DDA0DD",
+                  "#98D8C8",
+                  "#F7DC6F",
+                  "#BB8FCE",
+                  "#85C1E9",
+                ];
+
+                return percentage > 0 ? (
+                  <div
+                    key={item.id}
+                    className="h-full float-left"
+                    style={{
+                      width: `${Math.max(percentage, 0)}%`,
+                      backgroundColor: colors[index % colors.length],
+                    }}
+                    title={`${item.name}: ${percentage}%`}
+                  />
+                ) : null;
+              })}
+            </div>
+
+            {!isPercentageValid && (
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                ⚠️ Percentages should add up to approximately 100% (currently{" "}
+                {totalPercentage.toFixed(1)}%)
+              </p>
+            )}
+
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+              Each item's percentage represents its chance of being selected
+            </p>
+
+            <div className="flex gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={distributePercentagesEqually}
+                className="text-xs"
+              >
+                Distribute Equally
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setConfig((prev) => ({
+                    ...prev,
+                    items: prev.items.map((item) => ({ ...item, weight: 0 })),
+                  }));
+                }}
+                className="text-xs"
+              >
+                Reset All
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Items Configuration */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
@@ -393,21 +514,27 @@ export default function SetupPage() {
                   {config.mode === "weighted" && (
                     <div className="flex items-center gap-2">
                       <Label className="text-sm whitespace-nowrap">
-                        Weight:
+                        Percentage:
                       </Label>
-                      <Input
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        value={item.weight || 1}
-                        onChange={(e) =>
-                          updateItemWeight(
-                            item.id,
-                            parseFloat(e.target.value) || 1
-                          )
-                        }
-                        className="w-20"
-                      />
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={item.weight || 0}
+                          onChange={(e) =>
+                            updateItemWeight(
+                              item.id,
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-20 text-center"
+                        />
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          %
+                        </span>
+                      </div>
                     </div>
                   )}
 
@@ -442,6 +569,15 @@ export default function SetupPage() {
             )}
             {config.mode === "multiple" && config.selectCount && (
               <span> • Select {config.selectCount}</span>
+            )}
+            {config.mode === "weighted" && (
+              <span
+                className={
+                  !isPercentageValid ? "text-amber-600 dark:text-amber-400" : ""
+                }
+              >
+                • Total: {totalPercentage.toFixed(1)}%
+              </span>
             )}
           </div>
 
