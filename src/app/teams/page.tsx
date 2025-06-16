@@ -104,7 +104,8 @@ export default function TeamsPage() {
     return () => {
       ctx.revert();
       // Clean up any remaining team animations
-      gsap.killTweensOf(teamsGridRef.current);
+      const currentTeamsGrid = teamsGridRef.current;
+      gsap.killTweensOf(currentTeamsGrid);
       gsap.killTweensOf("[data-member]");
     };
   }, [router]);

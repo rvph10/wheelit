@@ -587,7 +587,6 @@ const MultipleSelectAnimation = ({
   const [isSelecting, setIsSelecting] = useState(false);
   const [shuffledItems, setShuffledItems] = useState<WheelItem[]>(items);
 
-  const containerRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
 
   // Generate colors for cards
