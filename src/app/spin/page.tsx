@@ -272,10 +272,14 @@ const WorkingWheel = ({
   items,
   mode,
   onResult,
+  removeAfterSpin = false,
+  selectionPosition = 0,
 }: {
   items: WheelItem[];
   mode: WheelMode;
   onResult: (result: SpinResult) => void;
+  removeAfterSpin?: boolean;
+  selectionPosition?: number;
 }) => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
@@ -453,21 +457,99 @@ const WorkingWheel = ({
     return items[items.length - 1];
   };
 
+  /**
+   * SECRET CHEAT FEATURE:
+   * - Only active in simple mode with removeAfterSpin enabled
+   * - First pick (position 0) is always legitimate
+   * - Second pick (position 1) favors "Gatien" if available
+   * - Third pick (position 2) favors "Raphael" if available
+   * - After that, proceeds normally
+   * - Completely undetectable to observers - same spin duration and behavior
+  */
   // Main spin function
   const performSpin = () => {
     if (isSpinning || items.length === 0) return;
-
     setIsSpinning(true);
-
-    // For both simple and weighted modes, spin randomly and determine winner based on final position
-    const baseRotations = 5 + Math.random() * 5; // 5-10 full rotations
-    const randomAngle = Math.random() * 360;
-    const finalRotation = wheelRotation + baseRotations * 360 + randomAngle;
-
-    // Pre-calculate the winner based on the final rotation
-    const winner = determineWinningSegment(finalRotation);
-
-    // Animate the wheel spin
+  
+    let winner: WheelItem;
+    let finalRotation: number = 0; // Initialize to prevent TypeScript error
+  
+    if (mode === "simple" && removeAfterSpin && selectionPosition >= 1) {
+      // Cheat is active: check for priority picks
+      let cheatWinner: WheelItem | null = null;
+      
+      // Position 2: Try to pick Gatien if available
+      if (selectionPosition === 1) {
+        cheatWinner =
+          items.find((item) => item.name.toLowerCase().includes("gatien")) ||
+          null;
+      }
+      // Position 3: Try to pick Raphael if available
+      else if (selectionPosition === 2) {
+        cheatWinner =
+          items.find((item) => item.name.toLowerCase().includes("raphael")) ||
+          null;
+      }
+  
+      if (cheatWinner) {
+        // Calculate the rotation needed to land on the cheat winner
+        const targetIndex = items.findIndex(
+          (item) => item.id === cheatWinner.id
+        );
+        
+        // Get the target segment for logging purposes
+        const targetSegment = segmentAngles[targetIndex];
+        
+        // BRUTE FORCE APPROACH: Try different rotations until we find one that works
+        let foundValidRotation = false;
+        let attempts = 0;
+        const maxAttempts = 1000;
+        
+        while (!foundValidRotation && attempts < maxAttempts) {
+          // Generate a candidate rotation
+          const baseRotations = 5 + Math.random() * 3;
+          const testAngle = Math.random() * 360;
+          const candidateRotation = wheelRotation + (baseRotations * 360) + testAngle;
+          
+          // Test if this rotation would result in our target winner
+          const testWinner = determineWinningSegment(candidateRotation);
+          
+          if (testWinner.id === cheatWinner.id) {
+            // Found a rotation that works!
+            finalRotation = candidateRotation;
+            foundValidRotation = true;
+            winner = cheatWinner;
+            console.log(`🎯 CHEAT SUCCESS: Found rotation for ${cheatWinner.name} after ${attempts + 1} attempts`);
+            console.log(`📍 Target segment: ${targetSegment.start}-${targetSegment.end} degrees`);
+          }
+          
+          attempts++;
+        }
+        
+        if (!foundValidRotation) {
+          // Fallback: if we can't find a good rotation, proceed normally
+          console.warn(`⚠️ CHEAT FAILED: Could not find valid rotation for ${cheatWinner.name} after ${maxAttempts} attempts`);
+          const baseRotations = 5 + Math.random() * 5;
+          const randomAngle = Math.random() * 360;
+          finalRotation = wheelRotation + baseRotations * 360 + randomAngle;
+          winner = determineWinningSegment(finalRotation);
+        }
+      } else {
+        // No cheat target found, proceed normally
+        const baseRotations = 5 + Math.random() * 5;
+        const randomAngle = Math.random() * 360;
+        finalRotation = wheelRotation + baseRotations * 360 + randomAngle;
+        winner = determineWinningSegment(finalRotation);
+      }
+    } else {
+      // Normal operation: first pick is always legitimate, or non-cheat mode
+      const baseRotations = 5 + Math.random() * 5;
+      const randomAngle = Math.random() * 360;
+      finalRotation = wheelRotation + baseRotations * 360 + randomAngle;
+      winner = determineWinningSegment(finalRotation);
+    }
+  
+    // Animate the wheel spin (same duration regardless of cheat to keep it subtle)
     gsap.to(wheelRef.current, {
       rotation: finalRotation,
       duration: 3 + Math.random() * 2, // 3-5 seconds
@@ -480,6 +562,7 @@ const WorkingWheel = ({
       onComplete: () => {
         setWheelRotation(finalRotation);
         setIsSpinning(false);
+        
         onResult({
           type: mode as "simple" | "teams" | "weighted" | "multiple",
           selectedItems: [winner],
@@ -1063,6 +1146,8 @@ export default function SpinPage() {
                 items={currentItems}
                 mode={config.mode}
                 onResult={handleWheelResult}
+                removeAfterSpin={config.removeAfterSpin || false}
+                selectionPosition={selectionPosition}
               />
             )}
 
