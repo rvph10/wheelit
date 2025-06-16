@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://wheelit.app/sitemap.xml
+Sitemap: https://wheelit.app/sitemap-0.xml
+
+# Block access to build artifacts and sensitive files
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+Disallow: /.well-known/
+
+# Allow specific API endpoints that should be indexed
+Allow: /api/og
+
+# Crawl delay (optional)
+Crawl-delay: 1 
