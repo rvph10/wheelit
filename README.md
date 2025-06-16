@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎯 WheelIt - Interactive Decision Maker
 
-## Getting Started
+A free, simple, and powerful web application for making random selections. Perfect for choosing restaurants, creating teams, picking names, or making any kind of decision!
 
-First, run the development server:
+**Live App**: [wheelit.app](https://wheelit.app)
+
+## ✨ Features
+
+### 🎲 Four Selection Modes
+- **Simple Mode**: Pick one random item from your list
+- **Teams Mode**: Automatically create balanced teams from your items
+- **Weighted Mode**: Set custom probabilities for each item (e.g., A=40%, B=60%)
+- **Multiple Mode**: Select several items at once without repetition
+
+### 🎨 Interactive Spinning Wheel
+- Beautiful animated roulette with smooth rotations
+- Color-coded segments for easy visualization
+- Realistic spinning physics with randomized results
+
+### 💾 Data Management
+- **Local Storage**: Your lists are saved automatically in your browser
+- **Export/Import**: Save your configurations as JSON files
+- **No Registration Required**: Completely free and anonymous
+
+### 📱 User-Friendly Interface
+- **3-Step Process**: Welcome → Setup → Spin
+- **Responsive Design**: Works perfectly on mobile and desktop
+- **Intuitive Controls**: Add, remove, and modify items easily
+
+## 🚀 How to Use
+
+1. **Visit** [wheelit.app](https://wheelit.app)
+2. **Choose** your selection mode (Simple, Teams, Weighted, or Multiple)
+3. **Add** your items (names, restaurants, activities, etc.)
+4. **Spin** the wheel and let fate decide!
+
+## 🛠️ Technologies Used
+
+- **Framework**: Next.js 14 with App Router
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Language**: TypeScript
+- **Storage**: Browser localStorage (no backend required)
+
+## 💻 Local Development
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/wheelit-app.git
+
+# Navigate to project directory
+cd wheelit-app
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Open http://localhost:3000 in your browser
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📦 Build and Deploy
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Build for production
+npm run build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Start production server
+npm start
+```
 
-## Learn More
+## 🎯 Use Cases
 
-To learn more about Next.js, take a look at the following resources:
+- **Team Building**: Create random teams for sports, games, or projects
+- **Decision Making**: Choose restaurants, movies, or activities
+- **Classroom Activities**: Pick students for presentations or group work
+- **Event Planning**: Randomly assign tasks or roles
+- **Gaming**: Create fair teams or select random challenges
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🌟 Why WheelIt?
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- ✅ **Completely Free** - No subscriptions or hidden fees
+- ✅ **No Registration** - Start using immediately
+- ✅ **Privacy First** - All data stays in your browser
+- ✅ **Mobile Friendly** - Use anywhere, anytime
+- ✅ **Multiple Modes** - Flexible for any selection need
+- ✅ **Export/Import** - Share configurations with others
 
-## Deploy on Vercel
+## 📄 License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project is open source and available under the [MIT License](LICENSE).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests.
+
+## 📞 Support
+
+Having issues or suggestions? Please open an issue on GitHub or visit [wheelit.app](https://wheelit.app) to try the app.
