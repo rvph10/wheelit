@@ -395,7 +395,9 @@ export default function SetupClient() {
         </Card>
 
         {/* Configuration Options */}
-        {(config.mode === "teams" || config.mode === "multiple") && (
+        {(config.mode === "teams" ||
+          config.mode === "multiple" ||
+          config.mode === "simple") && (
           <Card className="mb-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-lg">
             <CardContent className="p-6">
               <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
@@ -436,6 +438,34 @@ export default function SetupClient() {
                         }))
                       }
                     />
+                  </div>
+                )}
+                {config.mode === "simple" && (
+                  <div className="md:col-span-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="removeAfterSpin"
+                        checked={config.removeAfterSpin || false}
+                        onChange={(e) =>
+                          setConfig((prev) => ({
+                            ...prev,
+                            removeAfterSpin: e.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <Label
+                        htmlFor="removeAfterSpin"
+                        className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Remove items after selection
+                      </Label>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
+                      Items will be removed from the wheel after being selected,
+                      allowing you to pick multiple items in order.
+                    </p>
                   </div>
                 )}
               </div>

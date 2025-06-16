@@ -7,6 +7,8 @@ import Confetti from "react-confetti";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { wheelHaptics } from "@/lib/haptics";
+import { wheelSounds, uiSounds, initializeSounds } from "@/lib/sounds";
 import {
   ArrowLeft,
   RotateCcw,
@@ -471,6 +473,11 @@ const WorkingWheel = ({
     if (isSpinning || items.length === 0) return;
     setIsSpinning(true);
 
+    // Trigger haptic feedback when spinning starts
+    wheelHaptics.onSpinStart();
+    // Trigger sound effect when spinning starts
+    wheelSounds.onSpinStart();
+
     let winner: WheelItem;
     let finalRotation: number = 0; // Initialize to prevent TypeScript error
 
@@ -571,6 +578,17 @@ const WorkingWheel = ({
       onComplete: () => {
         setWheelRotation(finalRotation);
         setIsSpinning(false);
+
+        // Trigger haptic feedback when wheel stops spinning
+        wheelHaptics.onSpinStop();
+        // Trigger sound effect when wheel stops spinning
+        wheelSounds.onSpinStop();
+
+        // Slight delay before winner selection haptic for better UX
+        setTimeout(() => {
+          wheelHaptics.onWinnerSelected();
+          wheelSounds.onWinnerRevealed();
+        }, 300);
 
         onResult({
           type: mode as "simple" | "teams" | "weighted" | "multiple",
@@ -741,6 +759,12 @@ const MultipleSelectAnimation = ({
 
     // Step 4: Complete the selection and show results
     setIsSelecting(false);
+
+    // Trigger haptic feedback for multiple selection completion
+    wheelHaptics.onMultipleSelection();
+    // Trigger sound effect for multiple selection completion
+    wheelSounds.onMultipleSelection();
+
     onResult({
       type: "multiple",
       selectedItems: winners,
@@ -902,6 +926,9 @@ export default function SpinPage() {
       }
     }
 
+    // Initialize sound effects
+    initializeSounds().catch(console.warn);
+
     // Animation setup
     const ctx = gsap.context(() => {
       gsap.from(containerRef.current, {
@@ -926,6 +953,8 @@ export default function SpinPage() {
   // Close popup and show regular result
   const closeResultPopup = () => {
     setShowResultPopup(false);
+    // Trigger sound effect for modal close
+    uiSounds.onModalClose();
 
     // After popup closes, show the regular result in the sidebar
     if (popupResult) {
@@ -971,6 +1000,11 @@ export default function SpinPage() {
           teams,
           timestamp: Date.now(),
         };
+
+        // Trigger haptic feedback for team creation
+        wheelHaptics.onTeamCreated();
+        // Trigger sound effect for team creation
+        wheelSounds.onTeamCreated();
         break;
 
       case "multiple":
@@ -981,6 +1015,11 @@ export default function SpinPage() {
           selectedItems: selected,
           timestamp: Date.now(),
         };
+
+        // Trigger haptic feedback for multiple selection
+        wheelHaptics.onMultipleSelection();
+        // Trigger sound effect for multiple selection
+        wheelSounds.onMultipleSelection();
         break;
 
       default:
