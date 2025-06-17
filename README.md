@@ -31,6 +31,35 @@ A free, simple, and powerful web application for making random selections. Perfe
 - **Responsive Design**: Works perfectly on mobile and desktop
 - **Intuitive Controls**: Add, remove, and modify items easily
 
+### 🔊 Audio & Haptic Feedback
+
+- Spinning wheel sound effects
+- UI interaction sounds
+- Mobile haptic feedback support
+- Customizable audio settings
+
+### 📤 **Comprehensive Sharing & Export System**
+
+- **Social Media Integration**: Share directly to Twitter, Facebook, WhatsApp, and Telegram
+- **QR Code Generation**: Generate QR codes for easy mobile sharing
+- **Native Web Share API**: Use device's native sharing on mobile devices
+- **Multiple Export Formats**:
+  - JSON (complete configuration and results data)
+  - CSV (spreadsheet-compatible format)
+  - TXT (plain text format)
+  - PNG (image export of results)
+- **Shareable URLs**: Generate links that automatically load wheel configurations
+- **Custom Messages**: Add personalized messages to shares
+- **Share History**: Export complete spin history and results
+
+### ⚙️ Advanced Configuration
+
+- Team constraints (keep certain items separate)
+- Custom item weights and percentages
+- Persistent configuration storage
+- URL-based configuration sharing
+- Real-time validation and feedback
+
 ## 🚀 How to Use
 
 1. **Visit** [wheelit.app](https://wheelit.app)

@@ -24,6 +24,8 @@ import {
   CheckCircle,
   UserMinus,
   Settings,
+  Lock,
+  Unlock,
 } from "lucide-react";
 
 type WheelMode = "simple" | "teams" | "weighted" | "multiple";
@@ -32,6 +34,7 @@ interface WheelItem {
   id: string;
   name: string;
   weight?: number;
+  locked?: boolean;
 }
 
 // New interface for team constraints
@@ -175,7 +178,8 @@ export default function SetupClient() {
     {
       id: "weighted" as WheelMode,
       title: "Weighted Mode",
-      description: "Set custom percentages for each item (e.g., A=40%, B=30%)",
+      description:
+        "Set custom percentages for each item. Lock percentages and distribute remaining equally among unlocked items.",
       icon: Scale,
       color: "bg-purple-500",
     },
@@ -232,19 +236,49 @@ export default function SetupClient() {
     }));
   };
 
-  // Auto-distribute percentages equally among all items
-  const distributePercentagesEqually = () => {
-    if (config.items.length === 0) return;
+  // Toggle lock status for an item in weighted mode
+  const toggleItemLock = (id: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.id === id ? { ...item, locked: !item.locked } : item
+      ),
+    }));
+  };
 
-    const equalPercentage = Math.round((100 / config.items.length) * 10) / 10; // Round to 1 decimal
-    const remainder = 100 - equalPercentage * config.items.length;
+  // Auto-distribute percentages equally among unlocked items only
+  const distributePercentagesEqually = () => {
+    const unlockedItems = config.items.filter((item) => !item.locked);
+    if (unlockedItems.length === 0) return;
+
+    // Calculate total percentage already locked
+    const lockedPercentage = config.items
+      .filter((item) => item.locked)
+      .reduce((sum, item) => sum + (item.weight || 0), 0);
+
+    // Calculate remaining percentage to distribute
+    const remainingPercentage = 100 - lockedPercentage;
+
+    if (remainingPercentage <= 0) return;
+
+    const equalPercentage =
+      Math.round((remainingPercentage / unlockedItems.length) * 10) / 10; // Round to 1 decimal
+    const remainder =
+      remainingPercentage - equalPercentage * unlockedItems.length;
 
     setConfig((prev) => ({
       ...prev,
-      items: prev.items.map((item, index) => ({
-        ...item,
-        weight: index === 0 ? equalPercentage + remainder : equalPercentage, // Add remainder to first item
-      })),
+      items: prev.items.map((item) => {
+        if (item.locked) return item; // Don't change locked items
+
+        const isFirstUnlocked = unlockedItems[0]?.id === item.id;
+        return {
+          ...item,
+          weight: isFirstUnlocked
+            ? equalPercentage + remainder
+            : equalPercentage, // Add remainder to first unlocked item
+        };
+      }),
     }));
   };
 
@@ -711,12 +745,19 @@ export default function SetupClient() {
                     <Badge variant="outline">
                       Total: {getTotalPercentage().toFixed(1)}%
                     </Badge>
+                    <Badge variant="outline">
+                      Locked:{" "}
+                      {config.items.filter((item) => item.locked).length}
+                    </Badge>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={distributePercentagesEqually}
+                      disabled={
+                        config.items.filter((item) => !item.locked).length === 0
+                      }
                     >
-                      Auto-distribute
+                      Distribute Remaining
                     </Button>
                   </div>
                 )}
@@ -767,8 +808,32 @@ export default function SetupClient() {
                             )
                           }
                           className="w-20"
+                          disabled={item.locked}
                         />
                         <span className="text-sm text-gray-500">%</span>
+                        <Button
+                          variant={item.locked ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleItemLock(item.id)}
+                          className="flex items-center gap-1 px-2"
+                          title={
+                            item.locked
+                              ? "Unlock percentage"
+                              : "Lock percentage"
+                          }
+                        >
+                          {item.locked ? (
+                            <>
+                              <Lock className="h-3 w-3" />
+                              Locked
+                            </>
+                          ) : (
+                            <>
+                              <Unlock className="h-3 w-3" />
+                              Lock
+                            </>
+                          )}
+                        </Button>
                       </div>
                     )}
                     <Button

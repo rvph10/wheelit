@@ -30,6 +30,7 @@ interface WheelItem {
   name: string;
   weight?: number;
   color?: string;
+  locked?: boolean; // Add locked property for weight mode
 }
 
 // Add team constraint interface

@@ -7,10 +7,10 @@ import Confetti from "react-confetti";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import ShareExportModal from "@/components/ShareExportModal";
 import {
   ArrowLeft,
   RotateCcw,
-  Download,
   Share,
   Users,
   Sparkles,
@@ -22,6 +22,16 @@ interface WheelItem {
   id: string;
   name: string;
   weight?: number;
+  color?: string;
+  locked?: boolean; // Add locked property for weight mode
+}
+
+// Add team constraint interface
+interface TeamConstraint {
+  id: string;
+  item1Id: string;
+  item2Id: string;
+  type: "avoid" | "separate";
 }
 
 interface WheelConfig {
@@ -30,11 +40,20 @@ interface WheelConfig {
   teamCount?: number;
   selectCount?: number;
   removeAfterSpin?: boolean;
+  teamConstraints?: TeamConstraint[]; // Add constraints support
 }
 
 interface TeamsResult {
   teams: WheelItem[][];
   timestamp: number;
+}
+
+interface SpinResult {
+  type: "simple" | "teams" | "weighted" | "multiple";
+  selectedItems?: WheelItem[];
+  teams?: WheelItem[][];
+  timestamp: number;
+  position?: number;
 }
 
 /**
@@ -51,6 +70,8 @@ export default function TeamsPage() {
   const [teams, setTeams] = useState<WheelItem[][]>([]);
   const [showConfetti, setShowConfetti] = useState(false);
   const [shuffleHistory, setShuffleHistory] = useState<TeamsResult[]>([]);
+  const [showShareExportModal, setShowShareExportModal] = useState(false);
+  const [currentResult, setCurrentResult] = useState<SpinResult | null>(null);
 
   // Refs for animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -149,6 +170,14 @@ export default function TeamsPage() {
     const newTeams = createBalancedTeams(config.items, config.teamCount || 2);
     setTeams(newTeams);
 
+    // Create SpinResult for sharing modal
+    const spinResult: SpinResult = {
+      type: "teams",
+      teams: newTeams,
+      timestamp: Date.now(),
+    };
+    setCurrentResult(spinResult);
+
     // Save to history
     const result: TeamsResult = {
       teams: newTeams,
@@ -211,57 +240,14 @@ export default function TeamsPage() {
   };
 
   /**
-   * Exports the current teams result as JSON
+   * Convert TeamsResult history to SpinResult format for sharing modal
    */
-  const exportTeams = () => {
-    if (teams.length === 0) return;
-
-    const data = {
-      config,
-      teams,
-      exportDate: new Date().toISOString(),
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `wheelit-teams-${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  /**
-   * Shares the teams result using the Web Share API or clipboard
-   */
-  const shareTeams = async () => {
-    if (teams.length === 0) return;
-
-    const text = `WheelIt Teams Result:\n${teams
-      .map(
-        (team, i) =>
-          `Team ${i + 1}: ${team.map((item) => item.name).join(", ")}`
-      )
-      .join("\n")}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "WheelIt Teams",
-          text,
-          url: window.location.origin,
-        });
-      } catch (error) {
-        console.log("Sharing failed:", error);
-      }
-    } else {
-      await navigator.clipboard.writeText(text);
-    }
+  const getSpinHistoryFromTeamsHistory = (): SpinResult[] => {
+    return shuffleHistory.map((result) => ({
+      type: "teams" as const,
+      teams: result.teams,
+      timestamp: result.timestamp,
+    }));
   };
 
   return (
@@ -381,20 +367,11 @@ export default function TeamsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={exportTeams}
-                        className="flex items-center gap-2 hover:scale-105 transition-transform"
-                      >
-                        <Download className="h-4 w-4" />
-                        Export
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={shareTeams}
-                        className="flex items-center gap-2 hover:scale-105 transition-transform"
+                        onClick={() => setShowShareExportModal(true)}
+                        className="flex items-center gap-2 hover:scale-105 transition-transform bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-blue-200"
                       >
                         <Share className="h-4 w-4" />
-                        Share
+                        Share & Export
                       </Button>
                     </div>
                   )}
@@ -438,6 +415,15 @@ export default function TeamsPage() {
                   <CardTitle className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-yellow-500" />
                     Teams Result
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowShareExportModal(true)}
+                      className="ml-auto flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-blue-200"
+                    >
+                      <Share className="h-4 w-4" />
+                      Share & Export
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -498,6 +484,15 @@ export default function TeamsPage() {
           </div>
         </div>
       </div>
+
+      {/* Enhanced Share & Export Modal */}
+      <ShareExportModal
+        isOpen={showShareExportModal}
+        onClose={() => setShowShareExportModal(false)}
+        config={config}
+        result={currentResult}
+        spinHistory={getSpinHistoryFromTeamsHistory()}
+      />
     </div>
   );
 }

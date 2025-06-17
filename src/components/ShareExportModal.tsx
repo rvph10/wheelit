@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useWheelShare } from "@/lib/useWheelShare";
 import {
   X,
   Download,
@@ -21,6 +22,12 @@ import {
   Calendar,
   Clock,
   UserMinus,
+  QrCode,
+  Smartphone,
+  MessageCircle,
+  Twitter,
+  Facebook,
+  Send,
 } from "lucide-react";
 
 type WheelMode = "simple" | "teams" | "weighted" | "multiple";
@@ -30,6 +37,7 @@ interface WheelItem {
   name: string;
   weight?: number;
   color?: string;
+  locked?: boolean; // Add locked property for weight mode
 }
 
 // Add team constraint interface
@@ -85,35 +93,108 @@ export default function ShareExportModal({
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [showQR, setShowQR] = useState(false);
+  const [nativeSharing, setNativeSharing] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
   const resultCardRef = useRef<HTMLDivElement>(null);
+
+  // Use the wheel share hook
+  const wheelShare = useWheelShare();
+
+  // Generate QR code
+  const generateQRCode = useCallback((url: string) => {
+    try {
+      // Dynamic import to avoid SSR issues
+      import("qrcode-generator").then((QRCode) => {
+        const qr = QRCode.default(0, "M");
+        qr.addData(url);
+        qr.make();
+
+        // Create canvas for QR code
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        const moduleCount = qr.getModuleCount();
+        const cellSize = 8;
+        const margin = 4;
+        const size = moduleCount * cellSize + margin * 2;
+
+        canvas.width = size;
+        canvas.height = size;
+
+        // Fill background
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, size, size);
+
+        // Draw QR code
+        ctx.fillStyle = "#000000";
+        for (let row = 0; row < moduleCount; row++) {
+          for (let col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+              ctx.fillRect(
+                col * cellSize + margin,
+                row * cellSize + margin,
+                cellSize,
+                cellSize
+              );
+            }
+          }
+        }
+
+        setQrCodeDataUrl(canvas.toDataURL());
+      });
+    } catch (error) {
+      console.error("Failed to generate QR code:", error);
+    }
+  }, []);
 
   // Generate shareable URL with configuration
   const generateShareUrl = useCallback(() => {
     if (typeof window === "undefined") return "";
-
-    const params = new URLSearchParams({
-      mode: config.mode,
-      items: JSON.stringify(
-        config.items.map((item) => ({ name: item.name, weight: item.weight }))
-      ),
-      ...(config.teamCount && { teamCount: config.teamCount.toString() }),
-      ...(config.selectCount && { selectCount: config.selectCount.toString() }),
-      ...(config.removeAfterSpin && { removeAfterSpin: "true" }),
-      ...(config.teamConstraints &&
-        config.teamConstraints.length > 0 && {
-          teamConstraints: JSON.stringify(config.teamConstraints),
-        }),
-    });
-
-    return `${window.location.origin}/setup?${params.toString()}`;
-  }, [config]);
+    return wheelShare.generateShareUrl(config);
+  }, [config, wheelShare]);
 
   // Initialize share URL when modal opens
   useEffect(() => {
     if (isOpen) {
-      setShareUrl(generateShareUrl());
+      const url = generateShareUrl();
+      setShareUrl(url);
+      // Generate QR code when modal opens
+      if (url) {
+        generateQRCode(url);
+      }
     }
-  }, [isOpen, generateShareUrl]);
+  }, [isOpen, generateShareUrl, generateQRCode]);
+
+  // Handle native sharing
+  const handleNativeShare = async () => {
+    setNativeSharing(true);
+    const shareText = formatResultText();
+    const success = await wheelShare.handleNativeShare(
+      "WheelIt Results",
+      shareText,
+      shareUrl
+    );
+    if (!success) {
+      // Fallback to copying text
+      await copyToClipboard(shareText);
+    }
+    setNativeSharing(false);
+  };
+
+  // Handle social media sharing
+  const handleSocialShare = (platform: string) => {
+    const shareText = formatResultText();
+    const socialUrl = wheelShare.getSocialShareUrl(
+      platform,
+      shareUrl,
+      shareText
+    );
+    if (socialUrl) {
+      window.open(socialUrl, "_blank", "width=600,height=400");
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -318,7 +399,12 @@ export default function ShareExportModal({
                     <div className="space-y-3">
                       <div className="space-y-2">
                         {result.teams.map((team, index) => (
-                          <div key={index} className="flex items-center gap-2">
+                          <div
+                            key={`team-${index}-${team
+                              .map((m) => m.id)
+                              .join("-")}`}
+                            className="flex items-center gap-2"
+                          >
                             <Users className="h-4 w-4 text-blue-500" />
                             <span className="font-medium">
                               Team {index + 1}:
@@ -361,8 +447,8 @@ export default function ShareExportModal({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {result.selectedItems?.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2">
+                      {result.selectedItems?.map((item) => (
+                        <div key={item.id} className="flex items-center gap-2">
                           <Trophy className="h-4 w-4 text-yellow-500" />
                           <span className="font-semibold">{item.name}</span>
                           {config.mode === "weighted" && item.weight && (
@@ -409,6 +495,88 @@ export default function ShareExportModal({
                   </Button>
                 </div>
               </div>
+
+              {/* Social Media Sharing */}
+              <div>
+                <Label>Share on Social Media</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSocialShare("twitter")}
+                    className="flex items-center gap-2"
+                  >
+                    <Twitter className="h-4 w-4 text-blue-400" />
+                    Twitter
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSocialShare("facebook")}
+                    className="flex items-center gap-2"
+                  >
+                    <Facebook className="h-4 w-4 text-blue-600" />
+                    Facebook
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSocialShare("whatsapp")}
+                    className="flex items-center gap-2"
+                  >
+                    <MessageCircle className="h-4 w-4 text-green-500" />
+                    WhatsApp
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSocialShare("telegram")}
+                    className="flex items-center gap-2"
+                  >
+                    <Send className="h-4 w-4 text-blue-500" />
+                    Telegram
+                  </Button>
+                </div>
+              </div>
+
+              {/* Native Share & QR Code */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleNativeShare}
+                  disabled={nativeSharing}
+                  className="flex-1 flex items-center gap-2"
+                >
+                  <Smartphone className="h-4 w-4" />
+                  {nativeSharing ? "Sharing..." : "Native Share"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowQR(!showQR)}
+                  className="flex items-center gap-2"
+                >
+                  <QrCode className="h-4 w-4" />
+                  QR Code
+                </Button>
+              </div>
+
+              {/* QR Code Display */}
+              {showQR && qrCodeDataUrl && (
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <Label className="text-sm font-medium mb-2 block">
+                    Scan to open wheel configuration
+                  </Label>
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="QR Code for wheel configuration"
+                    className="mx-auto border rounded"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Scan with your phone camera to share this wheel
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

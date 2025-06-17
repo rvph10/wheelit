@@ -6,6 +6,7 @@ interface WheelItem {
   id: string;
   name: string;
   weight?: number;
+  locked?: boolean; // Add locked property for weight mode
 }
 
 // Add team constraint interface
@@ -40,7 +41,8 @@ export const useWheelShare = () => {
       mode: config.mode,
       items: JSON.stringify(config.items.map(item => ({ 
         name: item.name, 
-        weight: item.weight 
+        weight: item.weight,
+        locked: item.locked
       }))),
       ...(config.teamCount && { teamCount: config.teamCount.toString() }),
       ...(config.selectCount && { selectCount: config.selectCount.toString() }),
