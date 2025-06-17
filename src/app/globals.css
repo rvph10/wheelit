@@ -120,6 +120,11 @@
     @apply bg-background text-foreground;
   }
   
+  /* Prevent flash of unstyled content (FOUC) for animations */
+  .animation-ready {
+    transition: none !important;
+  }
+  
   /* Custom Scrollbar Styling */
   ::-webkit-scrollbar {
     width: 8px;
@@ -155,5 +160,18 @@
   /* Smooth scrolling behavior */
   html {
     scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  /* Landing page animation prevention utilities */
+  .animate-in-hidden {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  
+  .animate-in-hidden-scale {
+    opacity: 0;
+    transform: translateY(3rem) scale(0.9);
   }
 }

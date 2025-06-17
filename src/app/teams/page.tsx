@@ -122,10 +122,12 @@ export default function TeamsPage() {
       });
     }, containerRef);
 
+    // Capture current ref value for cleanup
+    const currentTeamsGrid = teamsGridRef.current;
+
     return () => {
       ctx.revert();
       // Clean up any remaining team animations
-      const currentTeamsGrid = teamsGridRef.current;
       gsap.killTweensOf(currentTeamsGrid);
       gsap.killTweensOf("[data-member]");
     };

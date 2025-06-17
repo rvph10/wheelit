@@ -89,7 +89,7 @@ export const metadata: Metadata = {
     canonical: "https://wheelit.app",
   },
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION,
+    google: process.env.GOOGLE_SITE_VERIFICATION, // Add this line
   },
   category: "technology",
   classification: "Interactive Tools",
@@ -104,6 +104,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Google Site Verification - ADD THIS */}
+        {process.env.GOOGLE_SITE_VERIFICATION && (
+          <meta 
+            name="google-site-verification" 
+            content={process.env.GOOGLE_SITE_VERIFICATION} 
+          />
+        )}
+
         {/* JSON-LD Structured Data */}
         <script
           type="application/ld+json"

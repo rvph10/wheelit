@@ -149,7 +149,8 @@ export default function SetupClient() {
     }, containerRef);
 
     return () => ctx.revert();
-  }, [showToast, wheelShare]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - this should only run once on mount
 
   useEffect(() => {
     // Save config to localStorage whenever it changes, but only after initial load

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
  */
 export default function HomeClient() {
   const router = useRouter();
+  const [isLoaded, setIsLoaded] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -39,7 +40,7 @@ export default function HomeClient() {
 
   const handleButtonLeave = () => {
     gsap.to(ctaButtonRef.current, {
-      scale: 1.7,
+      scale: 1,
       duration: 0.3,
       ease: "power2.out",
     });
@@ -66,7 +67,7 @@ export default function HomeClient() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Initial state - everything hidden
+      // Initial state - everything hidden (GSAP will override CSS)
       gsap.set([titleRef.current, subtitleRef.current, buttonsRef.current], {
         opacity: 0,
         y: 30,
@@ -82,13 +83,16 @@ export default function HomeClient() {
         opacity: 0,
       });
 
-      // Animation timeline
-      const tl = gsap.timeline({ delay: 0.2 });
+      // Animation timeline - start immediately
+      const tl = gsap.timeline({
+        onStart: () => setIsLoaded(true),
+        delay: 0.1, // Reduced delay
+      });
 
       // Background fade in
       tl.to(backgroundRef.current, {
         opacity: 1,
-        duration: 1,
+        duration: 0.8,
         ease: "power2.out",
       });
 
@@ -142,33 +146,45 @@ export default function HomeClient() {
         "-=0.2"
       );
 
-      // Simple floating animation for cards
-      gsap.to(cardsRef.current?.children || [], {
-        y: -5,
-        duration: 3,
-        ease: "sine.inOut",
-        yoyo: true,
-        repeat: -1,
-      });
+      // Simple floating animation for cards (delayed start)
+      tl.call(
+        () => {
+          gsap.to(cardsRef.current?.children || [], {
+            y: -5,
+            duration: 3,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+          });
+        },
+        [],
+        1
+      );
 
-      // Enhanced CTA button animations
-      // Subtle pulse effect
-      gsap.to(ctaButtonRef.current, {
-        scale: 1.02,
-        duration: 2,
-        ease: "sine.inOut",
-        yoyo: true,
-        repeat: -1,
-      });
+      // Enhanced CTA button animations (delayed start)
+      tl.call(
+        () => {
+          // Subtle pulse effect
+          gsap.to(ctaButtonRef.current, {
+            scale: 1.02,
+            duration: 2,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+          });
 
-      // Glow effect animation
-      gsap.to(ctaButtonRef.current, {
-        boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)",
-        duration: 1.5,
-        ease: "sine.inOut",
-        yoyo: true,
-        repeat: -1,
-      });
+          // Glow effect animation
+          gsap.to(ctaButtonRef.current, {
+            boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)",
+            duration: 1.5,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+          });
+        },
+        [],
+        0.5
+      );
     }, heroRef);
 
     return () => ctx.revert();
@@ -179,7 +195,9 @@ export default function HomeClient() {
       {/* Animated Background */}
       <div
         ref={backgroundRef}
-        className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"
+        className={`absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 ${
+          !isLoaded ? "opacity-0" : ""
+        }`}
       >
         {/* Floating orbs for visual interest */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-blue-200 dark:bg-blue-800 rounded-full opacity-20 blur-xl animate-pulse" />
@@ -196,7 +214,9 @@ export default function HomeClient() {
           {/* Main Title */}
           <h1
             ref={titleRef}
-            className="text-6xl md:text-7xl lg:text-8xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 dark:from-blue-400 dark:via-purple-400 dark:to-blue-300 bg-clip-text text-transparent leading-tight"
+            className={`text-6xl md:text-7xl lg:text-8xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 dark:from-blue-400 dark:via-purple-400 dark:to-blue-300 bg-clip-text text-transparent leading-tight ${
+              !isLoaded ? "opacity-0 translate-y-8" : ""
+            }`}
           >
             WheelIt
           </h1>
@@ -204,7 +224,9 @@ export default function HomeClient() {
           {/* Subtitle */}
           <p
             ref={subtitleRef}
-            className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed"
+            className={`text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed ${
+              !isLoaded ? "opacity-0 translate-y-8" : ""
+            }`}
           >
             Make decisions effortlessly with our interactive spinning wheel.
             Perfect for teams, games, and life choices.
@@ -213,7 +235,9 @@ export default function HomeClient() {
           {/* Action Buttons */}
           <div
             ref={buttonsRef}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-20"
+            className={`flex flex-col sm:flex-row gap-4 justify-center mb-20 ${
+              !isLoaded ? "opacity-0 translate-y-8" : ""
+            }`}
           >
             <Button
               ref={ctaButtonRef}
@@ -236,9 +260,15 @@ export default function HomeClient() {
           {/* Feature Cards */}
           <div
             ref={cardsRef}
-            className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto"
+            className={`grid gap-6 md:grid-cols-3 max-w-5xl mx-auto ${
+              !isLoaded ? "opacity-0" : ""
+            }`}
           >
-            <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer">
+            <Card
+              className={`bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer ${
+                !isLoaded ? "opacity-0 translate-y-12 scale-90" : ""
+              }`}
+            >
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Target
@@ -256,7 +286,11 @@ export default function HomeClient() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer">
+            <Card
+              className={`bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer ${
+                !isLoaded ? "opacity-0 translate-y-12 scale-90" : ""
+              }`}
+            >
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Sparkles
@@ -273,7 +307,11 @@ export default function HomeClient() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer">
+            <Card
+              className={`bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer ${
+                !isLoaded ? "opacity-0 translate-y-12 scale-90" : ""
+              }`}
+            >
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-cyan-100 dark:bg-cyan-900 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Zap
