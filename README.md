@@ -7,22 +7,26 @@ A free, simple, and powerful web application for making random selections. Perfe
 ## ✨ Features
 
 ### 🎲 Four Selection Modes
+
 - **Simple Mode**: Pick one random item from your list
 - **Teams Mode**: Automatically create balanced teams from your items
 - **Weighted Mode**: Set custom probabilities for each item (e.g., A=40%, B=60%)
 - **Multiple Mode**: Select several items at once without repetition
 
 ### 🎨 Interactive Spinning Wheel
+
 - Beautiful animated roulette with smooth rotations
 - Color-coded segments for easy visualization
 - Realistic spinning physics with randomized results
 
 ### 💾 Data Management
+
 - **Local Storage**: Your lists are saved automatically in your browser
 - **Export/Import**: Save your configurations as JSON files
 - **No Registration Required**: Completely free and anonymous
 
 ### 📱 User-Friendly Interface
+
 - **3-Step Process**: Welcome → Setup → Spin
 - **Responsive Design**: Works perfectly on mobile and desktop
 - **Intuitive Controls**: Add, remove, and modify items easily
@@ -98,3 +102,38 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 ## 📞 Support
 
 Having issues or suggestions? Please open an issue on GitHub or visit [wheelit.app](https://wheelit.app) to try the app.
+
+## 🎯 Team Constraints (NEW!)
+
+The team mode now supports advanced constraints to create more balanced and fair teams:
+
+### How It Works
+
+1. Go to **Setup** and select **Teams Mode**
+2. Click **"Manage"** next to "Team Constraints"
+3. Select pairs of items that should **not** be placed on the same team
+4. The algorithm will automatically ensure these constraints are respected when creating teams
+
+### Use Cases
+
+- **Sports Teams**: Separate the strongest players across different teams
+- **Work Groups**: Avoid putting team leads together
+- **Study Groups**: Balance skill levels by separating experienced members
+- **Event Planning**: Ensure diverse representation across teams
+
+### Technical Implementation
+
+- Smart constraint-aware team creation algorithm
+- Fallback mechanisms for impossible constraint scenarios
+- Preserved in shared URLs and exports
+- Visual indicators in the results showing which constraints were applied
+
+## 🔮 Upcoming Features
+
+- [ ] Custom themes and colors
+- [ ] Tournament bracket mode
+- [ ] Advanced constraint types (must-be-together)
+- [ ] Team size balancing options
+- [ ] Import/export from CSV files
+- [ ] Multiple language support
+- [ ] Advanced analytics and statistics

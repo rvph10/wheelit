@@ -68,15 +68,15 @@ export const wheelHaptics = {
   /**
    * Strong haptic feedback when winner is selected and revealed
    */
-  onWinnerSelected: () => triggerHapticFeedback(HapticPatterns.WINNER_SELECTED),
+  onWinnerSelected: () => triggerHapticFeedback([...HapticPatterns.WINNER_SELECTED]),
   
   /**
    * Pattern haptic feedback for multiple item selection
    */
-  onMultipleSelection: () => triggerHapticFeedback(HapticPatterns.MULTIPLE_SELECTION),
+  onMultipleSelection: () => triggerHapticFeedback([...HapticPatterns.MULTIPLE_SELECTION]),
   
   /**
    * Success haptic feedback for team creation
    */
-  onTeamCreated: () => triggerHapticFeedback(HapticPatterns.TEAM_CREATED),
+  onTeamCreated: () => triggerHapticFeedback([...HapticPatterns.TEAM_CREATED]),
 };

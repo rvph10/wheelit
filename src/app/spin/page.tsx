@@ -9,10 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { wheelHaptics } from "@/lib/haptics";
 import { wheelSounds, uiSounds, initializeSounds } from "@/lib/sounds";
+import ShareExportModal from "@/components/ShareExportModal";
 import {
   ArrowLeft,
   RotateCcw,
-  Download,
   Share,
   Trophy,
   Users,
@@ -32,12 +32,21 @@ interface WheelItem {
   color?: string;
 }
 
+// Add team constraint interface
+interface TeamConstraint {
+  id: string;
+  item1Id: string;
+  item2Id: string;
+  type: "avoid" | "separate";
+}
+
 interface WheelConfig {
   mode: WheelMode;
   items: WheelItem[];
   teamCount?: number;
   selectCount?: number;
   removeAfterSpin?: boolean;
+  teamConstraints?: TeamConstraint[]; // Add constraints support
 }
 
 interface SpinResult {
@@ -887,6 +896,7 @@ export default function SpinPage() {
   const [showResultPopup, setShowResultPopup] = useState(false);
   const [popupResult, setPopupResult] = useState<SpinResult | null>(null);
   const [selectionPosition, setSelectionPosition] = useState(0); // Track position for removeAfterSpin mode
+  const [showShareExportModal, setShowShareExportModal] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -973,16 +983,111 @@ export default function SpinPage() {
     }
   };
 
-  // Create teams from items
+  // Create teams from items with constraint support
   const createTeams = (
     items: WheelItem[],
-    teamCount: number
+    teamCount: number,
+    constraints: TeamConstraint[] = []
   ): WheelItem[][] => {
-    const shuffled = [...items].sort(() => Math.random() - 0.5);
-    const teams: WheelItem[][] = Array.from({ length: teamCount }, () => []);
+    if (constraints.length === 0) {
+      // Simple round-robin assignment if no constraints
+      const shuffled = [...items].sort(() => Math.random() - 0.5);
+      const teams: WheelItem[][] = Array.from({ length: teamCount }, () => []);
 
-    shuffled.forEach((item, index) => {
-      teams[index % teamCount].push(item);
+      shuffled.forEach((item, index) => {
+        teams[index % teamCount].push(item);
+      });
+
+      return teams;
+    }
+
+    // Advanced team creation with constraint satisfaction
+    const teams: WheelItem[][] = Array.from({ length: teamCount }, () => []);
+    const unassigned = [...items];
+    const maxAttempts = 1000; // Prevent infinite loops
+    let attempts = 0;
+
+    /**
+     * Check if placing an item in a team would violate any constraints
+     */
+    const wouldViolateConstraints = (
+      item: WheelItem,
+      teamIndex: number
+    ): boolean => {
+      const team = teams[teamIndex];
+
+      return constraints.some((constraint) => {
+        const isItem1 = constraint.item1Id === item.id;
+        const isItem2 = constraint.item2Id === item.id;
+
+        if (!isItem1 && !isItem2) return false; // Constraint doesn't involve this item
+
+        const otherItemId = isItem1 ? constraint.item2Id : constraint.item1Id;
+        return team.some((teamMember) => teamMember.id === otherItemId);
+      });
+    };
+
+    /**
+     * Find the best team for an item (least constrainted)
+     */
+    const findBestTeam = (item: WheelItem): number => {
+      const teamScores = teams.map((team, index) => ({
+        index,
+        size: team.length,
+        violates: wouldViolateConstraints(item, index),
+      }));
+
+      // Filter out teams that would violate constraints
+      const validTeams = teamScores.filter((score) => !score.violates);
+
+      if (validTeams.length === 0) {
+        // If all teams would violate constraints, pick the smallest one
+        // This is a fallback - in practice, this should rarely happen with reasonable constraints
+        return teamScores.reduce((smallest, current) =>
+          current.size < smallest.size ? current : smallest
+        ).index;
+      }
+
+      // Among valid teams, pick the one with the fewest members (for balance)
+      return validTeams.reduce((smallest, current) =>
+        current.size < smallest.size ? current : smallest
+      ).index;
+    };
+
+    // Shuffle items for randomness
+    const shuffledItems = [...items].sort(() => Math.random() - 0.5);
+
+    // First pass: try to assign all items respecting constraints
+    for (const item of shuffledItems) {
+      if (attempts >= maxAttempts) {
+        console.warn(
+          "Maximum attempts reached in team creation, falling back to simple assignment"
+        );
+        break;
+      }
+
+      const bestTeamIndex = findBestTeam(item);
+      teams[bestTeamIndex].push(item);
+
+      // Remove from unassigned
+      const itemIndex = unassigned.findIndex(
+        (unassignedItem) => unassignedItem.id === item.id
+      );
+      if (itemIndex !== -1) {
+        unassigned.splice(itemIndex, 1);
+      }
+
+      attempts++;
+    }
+
+    // Fallback: assign any remaining items to smallest teams
+    unassigned.forEach((item) => {
+      const smallestTeamIndex = teams.reduce(
+        (smallestIndex, team, index) =>
+          team.length < teams[smallestIndex].length ? index : smallestIndex,
+        0
+      );
+      teams[smallestTeamIndex].push(item);
     });
 
     return teams;
@@ -994,7 +1099,11 @@ export default function SpinPage() {
 
     switch (config.mode) {
       case "teams":
-        const teams = createTeams(currentItems, config.teamCount || 2);
+        const teams = createTeams(
+          currentItems,
+          config.teamCount || 2,
+          config.teamConstraints || []
+        );
         result = {
           type: "teams",
           teams,
@@ -1075,59 +1184,6 @@ export default function SpinPage() {
     const newHistory = [result, ...spinHistory].slice(0, 10);
     setSpinHistory(newHistory);
     localStorage.setItem("wheelit-history", JSON.stringify(newHistory));
-  };
-
-  // Export and share functions (same as original)
-  const exportResults = () => {
-    const data = {
-      config,
-      result,
-      history: spinHistory,
-      exportDate: new Date().toISOString(),
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `wheelit-results-${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const shareResults = async () => {
-    if (!result) return;
-
-    const text =
-      config.mode === "teams"
-        ? `WheelIt Teams Result:\n${result.teams
-            ?.map(
-              (team, i) =>
-                `Team ${i + 1}: ${team.map((item) => item.name).join(", ")}`
-            )
-            .join("\n")}`
-        : `WheelIt Result: ${result.selectedItems
-            ?.map((item) => item.name)
-            .join(", ")}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "WheelIt Results",
-          text,
-          url: window.location.origin,
-        });
-      } catch (error) {
-        console.log("Sharing failed:", error);
-      }
-    } else {
-      navigator.clipboard.writeText(text);
-    }
   };
 
   return (
@@ -1279,20 +1335,11 @@ export default function SpinPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={shareResults}
-                      className="w-full sm:w-auto"
+                      onClick={() => setShowShareExportModal(true)}
+                      className="w-full sm:w-auto bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-blue-200"
                     >
                       <Share className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={exportResults}
-                      className="w-full sm:w-auto"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
+                      Share & Export
                     </Button>
                   </div>
                 </CardContent>
@@ -1342,6 +1389,15 @@ export default function SpinPage() {
         result={popupResult}
         onClose={closeResultPopup}
         isRemoveMode={config.removeAfterSpin || false}
+      />
+
+      {/* Enhanced Share & Export Modal */}
+      <ShareExportModal
+        isOpen={showShareExportModal}
+        onClose={() => setShowShareExportModal(false)}
+        config={config}
+        result={result}
+        spinHistory={spinHistory}
       />
     </div>
   );
