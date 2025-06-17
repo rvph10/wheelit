@@ -56,10 +56,16 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://wheelit.app",
     siteName: "WheelIt",
-    title: "WheelIt - Interactive Decision Wheel & Team Randomizer",
+    title: "WheelIt - Make Decisions Fun with Interactive Spinning Wheels",
     description:
-      "Make decisions fun with WheelIt! Create custom spinning wheels, randomize team selections, and engage your audience with our interactive decision-making tool.",
+      "Create custom spinning wheels and randomize team selections. Perfect for games, team building, and decision making. Start spinning now!",
     images: [
+      {
+        url: "/api/og?title=WheelIt&subtitle=Make%20Decisions%20Fun%20with%20Interactive%20Spinning%20Wheels",
+        width: 1200,
+        height: 630,
+        alt: "WheelIt Interactive Decision Wheel Interface",
+      },
       {
         url: "/og-image.png",
         width: 1200,
@@ -74,8 +80,10 @@ export const metadata: Metadata = {
     creator: "@wheelit",
     title: "WheelIt - Interactive Decision Wheel & Team Randomizer",
     description:
-      "Make decisions fun with WheelIt! Create custom spinning wheels, randomize team selections, and engage your audience.",
-    images: ["/og-image.png"],
+      "Make decisions fun with custom spinning wheels. Perfect for teams, games, and quick choices!",
+    images: [
+      "/api/og?title=WheelIt&subtitle=Make%20Decisions%20Fun%20with%20Interactive%20Spinning%20Wheels",
+    ],
   },
   alternates: {
     canonical: "https://wheelit.app",
