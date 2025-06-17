@@ -81,8 +81,8 @@ export class ErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600 dark:text-gray-400 text-center">
-                We encountered an unexpected error. Don't worry, your data is
-                safe!
+                We encountered an unexpected error. Don&apos;t worry, your data
+                is safe!
               </p>
 
               {/* Error details in development */}

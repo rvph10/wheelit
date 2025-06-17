@@ -566,6 +566,7 @@ export default function ShareExportModal({
                   <Label className="text-sm font-medium mb-2 block">
                     Scan to open wheel configuration
                   </Label>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={qrCodeDataUrl}
                     alt="QR Code for wheel configuration"

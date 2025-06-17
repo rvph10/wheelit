@@ -149,7 +149,7 @@ export default function SetupClient() {
     }, containerRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [showToast, wheelShare]);
 
   useEffect(() => {
     // Save config to localStorage whenever it changes, but only after initial load
