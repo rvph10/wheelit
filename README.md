@@ -1,5 +1,7 @@
 # 🎯 WheelIt - Interactive Decision Maker
 
+![WheelIt App Preview](./public/og-image.png)
+
 A free, simple, and powerful web application for making random selections. Perfect for choosing restaurants, creating teams, picking names, or making any kind of decision!
 
 **Live App**: [wheelit.app](https://wheelit.app)
@@ -77,20 +79,46 @@ A free, simple, and powerful web application for making random selections. Perfe
 
 ## 💻 Local Development
 
+### Prerequisites
+
+- Node.js 18+ installed on your system
+- npm or yarn package manager
+
+### Getting Started
+
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/wheelit-app.git
+git clone https://github.com/rvph10/wheelit.git
 
 # Navigate to project directory
-cd wheelit-app
+cd wheelit
 
 # Install dependencies
 npm install
 
 # Start development server
 npm run dev
+```
 
-# Open http://localhost:3000 in your browser
+Open [http://localhost:3000](http://localhost:3000) in your browser to see the application running locally.
+
+### Available Scripts
+
+```bash
+# Development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Lint code
+npm run lint
+
+# Type check
+npm run type-check
 ```
 
 ## 📦 Build and Deploy
@@ -102,6 +130,8 @@ npm run build
 # Start production server
 npm start
 ```
+
+The application can be deployed to any static hosting service like Vercel, Netlify, or GitHub Pages.
 
 ## 🎯 Use Cases
 
@@ -120,19 +150,7 @@ npm start
 - ✅ **Multiple Modes** - Flexible for any selection need
 - ✅ **Export/Import** - Share configurations with others
 
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
-## 📞 Support
-
-Having issues or suggestions? Please open an issue on GitHub or visit [wheelit.app](https://wheelit.app) to try the app.
-
-## 🎯 Team Constraints (NEW!)
+## 🎯 Team Constraints Feature
 
 The team mode now supports advanced constraints to create more balanced and fair teams:
 
@@ -157,12 +175,32 @@ The team mode now supports advanced constraints to create more balanced and fair
 - Preserved in shared URLs and exports
 - Visual indicators in the results showing which constraints were applied
 
-## 🔮 Upcoming Features
+## 💖 Support the Project
 
-- [ ] Custom themes and colors
-- [ ] Tournament bracket mode
-- [ ] Advanced constraint types (must-be-together)
-- [ ] Team size balancing options
-- [ ] Import/export from CSV files
-- [ ] Multiple language support
-- [ ] Advanced analytics and statistics
+If you find WheelIt useful and would like to support its development:
+
+[![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://buymeacoffee.com/rvph)
+
+Your support helps keep this project free and continuously improved!
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE). You can do whatever you want with it, just keep the attribution!
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📞 Support
+
+Having issues or suggestions? Please open an issue on GitHub or visit [wheelit.app](https://wheelit.app) to try the app.
+
+---
+
+**Created with ❤️ by [upintown.dev](https://upintown.dev)**
