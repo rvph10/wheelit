@@ -472,9 +472,9 @@ const WorkingWheel = ({
   /**
    * SECRET CHEAT FEATURE:
    * - Only active in simple mode with removeAfterSpin enabled
-   * - First pick (position 0) is always legitimate
-   * - Second pick (position 1) favors "Gatien" if available
-   * - Third pick (position 2) favors "Raphael" if available
+   * - First pick (position 0) favors "Gatien" if available
+   * - Second pick (position 1) favors "Raphael" if available
+   * - Third pick (position 2) favors "Julien" if available
    * - After that, proceeds normally
    * - Completely undetectable to observers - same spin duration and behavior
    */
@@ -491,20 +491,26 @@ const WorkingWheel = ({
     let winner: WheelItem;
     let finalRotation: number = 0; // Initialize to prevent TypeScript error
 
-    if (mode === "simple" && removeAfterSpin && selectionPosition >= 1) {
+    if (mode === "simple" && removeAfterSpin && selectionPosition >= 0) {
       // Cheat is active: check for priority picks
       let cheatWinner: WheelItem | null = null;
 
-      // Position 2: Try to pick Gatien if available
-      if (selectionPosition === 1) {
+      // Position 1: Try to pick Gatien if available
+      if (selectionPosition === 0) {
         cheatWinner =
           items.find((item) => item.name.toLowerCase().includes("gatien")) ||
           null;
       }
-      // Position 3: Try to pick Raphael if available
-      else if (selectionPosition === 2) {
+      // Position 2: Try to pick Raphael if available
+      else if (selectionPosition === 1) {
         cheatWinner =
           items.find((item) => item.name.toLowerCase().includes("raphael")) ||
+          null;
+      }
+      // Position 3: Try to pick Julien if available
+      else if (selectionPosition === 2) {
+        cheatWinner =
+          items.find((item) => item.name.toLowerCase().includes("julien")) ||
           null;
       }
 
@@ -568,7 +574,7 @@ const WorkingWheel = ({
         winner = determineWinningSegment(finalRotation);
       }
     } else {
-      // Normal operation: first pick is always legitimate, or non-cheat mode
+      // Normal operation: non-cheat mode or position beyond cheat range
       const baseRotations = 5 + Math.random() * 5;
       const randomAngle = Math.random() * 360;
       finalRotation = wheelRotation + baseRotations * 360 + randomAngle;
